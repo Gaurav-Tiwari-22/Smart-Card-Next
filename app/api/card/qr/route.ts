@@ -10,10 +10,10 @@ export async function GET(req: NextRequest) {
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
-    const vCardUrl = `${appUrl}/api/contact/${user.slug}`
-    // Encode the permanent vCard URL instead of raw vCard data
-    const contactQR = await QRCode.toDataURL(vCardUrl, {
-      errorCorrectionLevel: 'H', width: 400, margin: 2,
+    // Encode vCard data directly into QR — phones will show "Add to Contacts" instantly
+    const vCardData = buildVCard(user.toPublic() as Parameters<typeof buildVCard>[0])
+    const contactQR = await QRCode.toDataURL(vCardData, {
+      errorCorrectionLevel: 'M', width: 400, margin: 2,
       color: { dark: '#000000', light: '#FFFFFF' },
     })
 
