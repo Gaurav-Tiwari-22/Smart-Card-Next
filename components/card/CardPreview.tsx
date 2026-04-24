@@ -197,7 +197,7 @@ export function CardFace({ user, design, side, qrContactDataUrl, qrPortfolioData
               <div>
                 <ContactRow icon="✆" value={user.phone} />
                 <ContactRow icon="✉" value={user.email} />
-                <ContactRow icon="◎" value={user.portfolioUrl} />
+                {/* <ContactRow icon="◎" value={user.portfolioUrl} /> */}
               </div>
             </div>
             {/* QR */}

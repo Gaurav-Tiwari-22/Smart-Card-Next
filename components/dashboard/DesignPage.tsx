@@ -236,7 +236,7 @@ export function DesignPage({ user, qr, token, onSave, toast }: DesignPageProps) 
             <input
               value={design.tagline}
               onChange={e => upd('tagline', e.target.value)}
-              placeholder="Building Scalable Web Apps"
+              placeholder="Turning Your Ideas into Scalable Digital Products"
               style={{ background: 'var(--bg3)', border: '0.5px solid var(--brd)', borderRadius: 7, padding: '8px 11px', color: 'var(--tx)', fontSize: 12, outline: 'none' }}
               onFocus={e => e.currentTarget.style.borderColor = 'var(--gold)'}
               onBlur={e => e.currentTarget.style.borderColor = 'var(--brd)'}

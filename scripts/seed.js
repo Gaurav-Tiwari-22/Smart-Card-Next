@@ -74,7 +74,7 @@ async function seed() {
       accentColor:'#C9A84C', textColor:'#FFFFFF', subtextColor:'#C4BBDD',
       frontLayout:'name-left', showCornerDeco:false, showGoldLine:true,
       qrPosition:'top-right', backLayout:'split', fontFamily:'playfair',
-      showTagline:true, tagline:'Building Scalable Web Apps',
+      showTagline:true, tagline:'Turning Your Ideas into Scalable Digital Products',
     },
   })
 

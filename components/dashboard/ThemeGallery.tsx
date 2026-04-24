@@ -90,7 +90,7 @@ export function ThemeGallery({ user, currentDesign, onSelectTheme, toast }: Them
                 subtextColor: tmpl.subtextColor, showCornerDeco: tmpl.showCornerDeco,
                 showGoldLine: tmpl.showGoldLine, frontLayout: tmpl.frontLayout,
                 qrPosition: tmpl.qrPosition, fontFamily: tmpl.fontFamily,
-                showTagline: tmpl.showTagline, tagline: 'Building Scalable Web Apps',
+                showTagline: tmpl.showTagline, tagline: 'Turning Your Ideas into Scalable Digital Products',
               }
               return (
                 <div
@@ -152,7 +152,7 @@ export function ThemeGallery({ user, currentDesign, onSelectTheme, toast }: Them
                     qrPosition: selectedTmpl?.qrPosition,
                     fontFamily: selectedTmpl?.fontFamily,
                     showTagline: selectedTmpl?.showTagline,
-                    tagline: 'Building Scalable Web Apps',
+                    tagline: 'Turning Your Ideas into Scalable Digital Products',
                   }}
                   side={previewFlipped ? 'back' : 'front'}
                 />

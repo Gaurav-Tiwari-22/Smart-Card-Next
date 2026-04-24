@@ -44,7 +44,7 @@ const cardDesignSchema = new Schema({
   backLayout:     { type: String,  default: 'split' },
   fontFamily:     { type: String,  default: 'playfair' },
   showTagline:    { type: Boolean, default: true },
-  tagline:        { type: String,  default: 'Building Scalable Web Apps' },
+  tagline:        { type: String,  default: 'Turning Your Ideas into Scalable Digital Products' },
 }, { _id: false })
 
 const userSchema = new Schema<IUser>({

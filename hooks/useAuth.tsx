@@ -33,7 +33,7 @@ const OFFLINE_DEMO_USER: User = {
     backLayout: 'split',
     fontFamily: 'playfair',
     showTagline: true,
-    tagline: 'Building Scalable Web Apps',
+    tagline: 'Turning Your Ideas into Scalable Digital Products',
   },
   contactScans: 0,
   portfolioScans: 0,
