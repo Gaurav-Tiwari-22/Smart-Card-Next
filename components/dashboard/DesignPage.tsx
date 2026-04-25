@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react'
 import { CardPreview, CardFace } from '@/components/card/CardPreview'
 import { User, CardDesign, QRData } from '@/types'
 import { TEMPLATES, FONTS, DEFAULT_DESIGN } from '@/lib/cardConstants'
-import html2canvas from 'html2canvas'
+// dom-to-image-more is loaded dynamically inside downloadCard
 
 interface DesignPageProps {
   user: User
@@ -46,26 +46,47 @@ export function DesignPage({ user, qr, token, onSave, toast }: DesignPageProps) 
     }
   }
 
-  // Download card face as high-res PNG for print
+  // Download card face as high-res PNG using dom-to-image-more
   const downloadCard = useCallback(async (side: 'front' | 'back' | 'both') => {
     setDownloading(true)
     try {
       const sides: ('front' | 'back')[] = side === 'both' ? ['front', 'back'] : [side]
 
+      // Dynamic import (UMD module — may or may not have .default)
+      const dtiModule = await import('dom-to-image-more')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const domtoimage = (dtiModule.default || dtiModule) as any
+
+      // Pre-fetch Google Fonts CSS to inline (avoids CORS SecurityError)
+      let fontCSS = ''
+      try {
+        const fontUrl = 'https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:wght@300;400;600&family=Bebas+Neue&family=Josefin+Sans:wght@300;400;600&family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400&family=Outfit:wght@300;400;500;600;700&display=swap'
+        const resp = await fetch(fontUrl)
+        fontCSS = await resp.text()
+      } catch { /* continue without fonts */ }
+
       for (const s of sides) {
-        // Render at PREVIEW size (same as card preview) — scale 3x for print quality
         const PREVIEW_W = 350
         const PREVIEW_H = 220
         const SCALE = 3  // Output: 1050×660px
 
         const container = document.createElement('div')
         container.style.position = 'fixed'
-        container.style.left = '-9999px'
-        container.style.top = '0'
+        container.style.left = '0'
+        container.style.top = '-9999px'
         container.style.width = `${PREVIEW_W}px`
         container.style.height = `${PREVIEW_H}px`
-        container.style.zIndex = '-1'
+        container.style.overflow = 'hidden'
+        container.style.borderRadius = '13px'
+        container.style.zIndex = '9999'
         document.body.appendChild(container)
+
+        // Inject Google Fonts CSS inline (same-origin → no CORS)
+        if (fontCSS) {
+          const styleEl = document.createElement('style')
+          styleEl.textContent = fontCSS
+          container.appendChild(styleEl)
+        }
 
         const { createRoot } = await import('react-dom/client')
         const root = createRoot(container)
@@ -80,38 +101,43 @@ export function DesignPage({ user, qr, token, onSave, toast }: DesignPageProps) 
               qrPortfolioDataUrl={qr.portfolio}
             />
           )
-          setTimeout(resolve, 800)
+          setTimeout(resolve, 2000)
         })
 
-        const canvas = await html2canvas(container, {
-          width: PREVIEW_W,
-          height: PREVIEW_H,
-          scale: SCALE,  // 3x scale → 1050×660 output
-          backgroundColor: null,
-          useCORS: true,
-          logging: false,
-        })
-
-        // Use toBlob for reliable download with correct filename
-        await new Promise<void>((resolve) => {
-          canvas.toBlob((blob) => {
-            if (blob) {
-              const url = URL.createObjectURL(blob)
-              const a = document.createElement('a')
-              a.download = `smartcard-${s}-print.png`
-              a.href = url
-              a.style.display = 'none'
-              document.body.appendChild(a)
-              a.click()
-              document.body.removeChild(a)
-              setTimeout(() => URL.revokeObjectURL(url), 1000)
+        // toBlob with filter to skip external stylesheets (CORS fix)
+        const blob: Blob = await domtoimage.toBlob(container, {
+          width:  PREVIEW_W * SCALE,
+          height: PREVIEW_H * SCALE,
+          style: {
+            transform: `scale(${SCALE})`,
+            transformOrigin: 'top left',
+            width:  `${PREVIEW_W}px`,
+            height: `${PREVIEW_H}px`,
+          },
+          bgcolor: '#0A0A0A',
+          cacheBust: true,
+          filter: (node: Element) => {
+            if (node?.tagName === 'LINK' && node?.getAttribute?.('href')?.includes('fonts.googleapis')) {
+              return false
             }
-            resolve()
-          }, 'image/png')
+            return true
+          },
         })
+
+        const blobUrl = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.download = `smartcard-${s}-print.png`
+        a.href = blobUrl
+        a.style.display = 'none'
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 2000)
 
         root.unmount()
         document.body.removeChild(container)
+
+        if (sides.length > 1) await new Promise(r => setTimeout(r, 500))
       }
 
       toast(side === 'both' ? 'Front + Back downloaded for print!' : `${side} card downloaded!`, 'success')
