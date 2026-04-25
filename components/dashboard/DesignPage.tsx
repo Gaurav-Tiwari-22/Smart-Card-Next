@@ -83,9 +83,9 @@ export function DesignPage({ user, qr, token, onSave, toast }: DesignPageProps) 
         if (i > 0) pdf.addPage([CARD_W_IN, CARD_H_IN], 'landscape')
 
         // Render at high DPI for print quality (300 DPI → 1050×600 pixels)
-        const PREVIEW_W = 350
-        const PREVIEW_H = 200
-        const SCALE = 3  // 350×3 = 1050px wide ≈ 300 DPI at 3.5"
+        const PREVIEW_W = 700
+        const PREVIEW_H = 400
+        const SCALE = 1  // 350×3 = 1050px wide ≈ 300 DPI at 3.5"
 
         const container = document.createElement('div')
         container.style.position = 'fixed'
@@ -123,12 +123,12 @@ export function DesignPage({ user, qr, token, onSave, toast }: DesignPageProps) 
 
         // Capture as high-res PNG data URL
         const dataUrl: string = await domtoimage.toPng(container, {
-          width:  PREVIEW_W * SCALE,
+          width: PREVIEW_W * SCALE,
           height: PREVIEW_H * SCALE,
           style: {
             transform: `scale(${SCALE})`,
             transformOrigin: 'top left',
-            width:  `${PREVIEW_W}px`,
+            width: `${PREVIEW_W}px`,
             height: `${PREVIEW_H}px`,
           },
           bgcolor: '#0A0A0A',
@@ -247,11 +247,11 @@ export function DesignPage({ user, qr, token, onSave, toast }: DesignPageProps) 
         {/* Colors */}
         <div style={card}>
           <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12 }}>Colors</div>
-          <ColorRow label="Background 1"         field="bgColor"       />
-          <ColorRow label="Background 2"         field="bgColor2"      />
-          <ColorRow label="Accent / Highlight"   field="accentColor"   />
-          <ColorRow label="Main Text"            field="textColor"     />
-          <ColorRow label="Subtext"              field="subtextColor"  />
+          <ColorRow label="Background 1" field="bgColor" />
+          <ColorRow label="Background 2" field="bgColor2" />
+          <ColorRow label="Accent / Highlight" field="accentColor" />
+          <ColorRow label="Main Text" field="textColor" />
+          <ColorRow label="Subtext" field="subtextColor" />
         </div>
 
         {/* Font */}
@@ -266,14 +266,14 @@ export function DesignPage({ user, qr, token, onSave, toast }: DesignPageProps) 
         <div style={card}>
           <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12 }}>Layout Options</div>
           <Select label="Name Alignment" field="frontLayout" opts={[
-            { value: 'name-left',   label: 'Left'   },
+            { value: 'name-left', label: 'Left' },
             { value: 'name-center', label: 'Center' },
-            { value: 'name-right',  label: 'Right'  },
+            { value: 'name-right', label: 'Right' },
           ]} />
           <Select label="QR Code Position" field="qrPosition" opts={[
             { value: 'bottom-right', label: 'Bottom Right' },
-            { value: 'bottom-left',  label: 'Bottom Left'  },
-            { value: 'top-right',    label: 'Top Right'    },
+            { value: 'bottom-left', label: 'Bottom Left' },
+            { value: 'top-right', label: 'Top Right' },
           ]} />
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 12 }}>
@@ -289,9 +289,9 @@ export function DesignPage({ user, qr, token, onSave, toast }: DesignPageProps) 
           </div>
 
           <div style={{ marginTop: 4 }}>
-            <Toggle label="Corner Decorations"  field="showCornerDeco" />
-            <Toggle label="Accent / Gold Line"  field="showGoldLine"   />
-            <Toggle label="Show Tagline"         field="showTagline"    />
+            <Toggle label="Corner Decorations" field="showCornerDeco" />
+            <Toggle label="Accent / Gold Line" field="showGoldLine" />
+            <Toggle label="Show Tagline" field="showTagline" />
           </div>
         </div>
 
