@@ -83,8 +83,8 @@ export function DesignPage({ user, qr, token, onSave, toast }: DesignPageProps) 
         if (i > 0) pdf.addPage([CARD_W_IN, CARD_H_IN], 'landscape')
 
         // Render at high DPI for print quality (300 DPI → 1050×600 pixels)
-        const PREVIEW_W = 700
-        const PREVIEW_H = 400
+        const PREVIEW_W = 1050
+        const PREVIEW_H = 600
         const SCALE = 1  // 350×3 = 1050px wide ≈ 300 DPI at 3.5"
 
         const container = document.createElement('div')
