@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react'
 import { CardPreview, CardFace } from '@/components/card/CardPreview'
 import { User, CardDesign, QRData } from '@/types'
-// dom-to-image-more is loaded dynamically inside downloadCardFace
+// dom-to-image-more and jspdf are loaded dynamically inside downloadCardFace
 
 interface DashboardPageProps {
     user: User
@@ -26,16 +26,17 @@ export function DashboardPage({ user, qr, vCardUrl, onNavigate, toast }: Dashboa
         toast(`${name} QR downloaded!`)
     }
 
-    // Download card face as high-res PNG using dom-to-image-more
+    // Download card as high-quality print-ready PDF (3.5×2" at 300 DPI)
     const downloadCardFace = useCallback(async (side: 'front' | 'back' | 'both') => {
         setDownloading(true)
         try {
             const sides: ('front' | 'back')[] = side === 'both' ? ['front', 'back'] : [side]
 
-            // Dynamic import dom-to-image-more (browser-only UMD module)
+            // Dynamic imports
             const dtiModule = await import('dom-to-image-more')
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const domtoimage = (dtiModule.default || dtiModule) as any
+            const { jsPDF } = await import('jspdf')
 
             // Pre-fetch Google Fonts CSS so we can inline it (avoids CORS SecurityError)
             let fontCSS = ''
@@ -45,10 +46,25 @@ export function DashboardPage({ user, qr, vCardUrl, onNavigate, toast }: Dashboa
                 fontCSS = await resp.text()
             } catch { /* font CSS fetch failed — continue without */ }
 
-            for (const s of sides) {
+            // Standard business card: 3.5" × 2" — landscape
+            const CARD_W_IN = 3.5
+            const CARD_H_IN = 2
+            const pdf = new jsPDF({
+                orientation: 'landscape',
+                unit: 'in',
+                format: [CARD_W_IN, CARD_H_IN],
+            })
+
+            for (let i = 0; i < sides.length; i++) {
+                const s = sides[i]
+
+                // Add new page for subsequent sides
+                if (i > 0) pdf.addPage([CARD_W_IN, CARD_H_IN], 'landscape')
+
+                // Render at high DPI for print quality (300 DPI → 1050×600 pixels)
                 const PREVIEW_W = 350
-                const PREVIEW_H = 220
-                const SCALE = 3  // Output: 1050×660px (≈ 3.5"×2" at 300 DPI)
+                const PREVIEW_H = 200
+                const SCALE = 3
 
                 // Create off-screen container
                 const container = document.createElement('div')
@@ -58,7 +74,7 @@ export function DashboardPage({ user, qr, vCardUrl, onNavigate, toast }: Dashboa
                 container.style.width = `${PREVIEW_W}px`
                 container.style.height = `${PREVIEW_H}px`
                 container.style.overflow = 'hidden'
-                container.style.borderRadius = '13px'
+                container.style.borderRadius = '0px'  // No radius for print
                 container.style.zIndex = '9999'
                 document.body.appendChild(container)
 
@@ -86,8 +102,8 @@ export function DashboardPage({ user, qr, vCardUrl, onNavigate, toast }: Dashboa
                     setTimeout(resolve, 2000)
                 })
 
-                // toBlob with filter to skip external <link> stylesheets (CORS fix)
-                const blob: Blob = await domtoimage.toBlob(container, {
+                // Capture as high-res PNG data URL
+                const dataUrl: string = await domtoimage.toPng(container, {
                     width: PREVIEW_W * SCALE,
                     height: PREVIEW_H * SCALE,
                     style: {
@@ -98,7 +114,6 @@ export function DashboardPage({ user, qr, vCardUrl, onNavigate, toast }: Dashboa
                     },
                     bgcolor: '#0A0A0A',
                     cacheBust: true,
-                    // Skip external stylesheet <link> nodes to avoid CORS SecurityError
                     filter: (node: Element) => {
                         if (node?.tagName === 'LINK' && node?.getAttribute?.('href')?.includes('fonts.googleapis')) {
                             return false
@@ -107,24 +122,25 @@ export function DashboardPage({ user, qr, vCardUrl, onNavigate, toast }: Dashboa
                     },
                 })
 
-                // Blob → ObjectURL → download link (proper .png filename)
-                const blobUrl = URL.createObjectURL(blob)
-                const a = document.createElement('a')
-                a.download = `smartcard-${s}-print.png`
-                a.href = blobUrl
-                a.style.display = 'none'
-                document.body.appendChild(a)
-                a.click()
-                document.body.removeChild(a)
-                setTimeout(() => URL.revokeObjectURL(blobUrl), 2000)
+                // Embed the captured image into the PDF page
+                pdf.addImage(dataUrl, 'PNG', 0, 0, CARD_W_IN, CARD_H_IN, undefined, 'FAST')
 
                 root.unmount()
                 document.body.removeChild(container)
-
-                if (sides.length > 1) await new Promise(r => setTimeout(r, 500))
             }
 
-            toast(side === 'both' ? 'Front + Back cards downloaded!' : `${side} card downloaded!`, 'success')
+            // Save the PDF
+            const fileName = side === 'both'
+                ? 'smartcard-front-back-print.pdf'
+                : `smartcard-${side}-print.pdf`
+            pdf.save(fileName)
+
+            toast(
+                side === 'both'
+                    ? 'Front + Back PDF downloaded — print-ready!'
+                    : `${side.charAt(0).toUpperCase() + side.slice(1)} card PDF downloaded!`,
+                'success'
+            )
         } catch (e) {
             console.error('Download error:', e)
             toast('Download failed — try again', 'error')
@@ -173,23 +189,23 @@ export function DashboardPage({ user, qr, vCardUrl, onNavigate, toast }: Dashboa
                     {/* Download card for print */}
                     <div style={{ marginTop: 12, background: 'var(--goldx)', border: '0.5px solid rgba(201,168,76,.2)', borderRadius: 8, padding: '10px 12px' }}>
                         <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 6, color: 'var(--gold)' }}>⬇ Download Card for Print</div>
-                        <div style={{ fontSize: 10, color: 'var(--mt)', marginBottom: 8 }}>High-resolution PNG (1050×662px — 3.5″×2″ at 300 DPI)</div>
+                        <div style={{ fontSize: 10, color: 'var(--mt)', marginBottom: 8 }}>High-quality PDF (3.5″×2″ at 300 DPI — print-ready)</div>
                         <div style={{ display: 'flex', gap: 6 }}>
                             <button
                                 onClick={() => downloadCardFace('front')}
                                 disabled={downloading}
                                 style={{ flex: 1, padding: '7px 10px', background: 'transparent', border: '0.5px solid rgba(201,168,76,.4)', borderRadius: 7, color: 'var(--gold)', fontSize: 11, cursor: downloading ? 'not-allowed' : 'pointer', fontFamily: 'Outfit,sans-serif' }}
-                            >Front ↓</button>
+                            >Front PDF ↓</button>
                             <button
                                 onClick={() => downloadCardFace('back')}
                                 disabled={downloading}
                                 style={{ flex: 1, padding: '7px 10px', background: 'transparent', border: '0.5px solid rgba(201,168,76,.4)', borderRadius: 7, color: 'var(--gold)', fontSize: 11, cursor: downloading ? 'not-allowed' : 'pointer', fontFamily: 'Outfit,sans-serif' }}
-                            >Back ↓</button>
+                            >Back PDF ↓</button>
                             <button
                                 onClick={() => downloadCardFace('both')}
                                 disabled={downloading}
                                 style={{ flex: 1, padding: '7px 10px', background: 'linear-gradient(135deg,#C9A84C,#9A7A28)', border: 'none', borderRadius: 7, color: '#000', fontSize: 11, fontWeight: 600, cursor: downloading ? 'not-allowed' : 'pointer', fontFamily: 'Outfit,sans-serif', opacity: downloading ? 0.7 : 1 }}
-                            >{downloading ? 'Capturing...' : 'Both ↓'}</button>
+                            >{downloading ? 'Generating PDF...' : 'Both PDF ↓'}</button>
                         </div>
                     </div>
                 </div>
